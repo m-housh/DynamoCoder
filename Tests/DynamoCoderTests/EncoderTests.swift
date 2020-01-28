@@ -7,7 +7,7 @@
 
 import XCTest
 import DynamoDB
-@testable import CodablePlayground
+@testable import DynamoCoder
 
 final class DynamoEncoderTests: XCTestCase {
 

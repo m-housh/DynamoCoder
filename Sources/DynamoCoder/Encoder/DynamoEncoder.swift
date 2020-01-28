@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  DynamoEncoder.swift
 //  
 //
 //  Created by Michael Housh on 1/27/20.
@@ -7,9 +7,6 @@
 
 import Foundation
 import DynamoDB
-
-public typealias DynamoAttributeDict = [String: DynamoDB.AttributeValue]
-public typealias DynamoEncodedArray = [DynamoAttributeDict]
 
 public struct DynamoEncoder {
 

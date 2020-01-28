@@ -6,6 +6,10 @@
 //
 
 import Foundation
+import DynamoDB
+
+public typealias DynamoAttributeDict = [String: DynamoDB.AttributeValue]
+public typealias DynamoEncodedArray = [DynamoAttributeDict]
 
 /// A namespace for number types that we can encode / decode.
 protocol DynamoNumber {
