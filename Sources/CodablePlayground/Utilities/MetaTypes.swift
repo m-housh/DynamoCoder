@@ -8,7 +8,10 @@
 import Foundation
 
 /// A namespace for number types that we can encode / decode.
-protocol DynamoNumber { }
+protocol DynamoNumber {
+
+    init?(_ string: String)
+}
 
 protocol OptionalType {
     var isNil: Bool { get }
@@ -16,7 +19,6 @@ protocol OptionalType {
 
 extension Double: DynamoNumber { }
 extension Float: DynamoNumber { }
-extension Decimal: DynamoNumber { }
 extension Int: DynamoNumber { }
 extension Int8: DynamoNumber { }
 extension Int16: DynamoNumber { }
