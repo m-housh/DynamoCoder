@@ -78,13 +78,11 @@ public struct DynamoEncoder {
     }
 }
 
-
 class _DynamoEncoder: Encoder {
 
     var codingPath: [CodingKey]
     var storage: DynamoEncodingStorage
     var userInfo: [CodingUserInfoKey : Any] = [:]
-
 
     init(
         codingPath: [CodingKey] = [])
@@ -99,7 +97,6 @@ class _DynamoEncoder: Encoder {
         // We can only encode one value per coding path.
         storage.count == codingPath.count
     }
-
 
     func container<Key>(keyedBy type: Key.Type) -> KeyedEncodingContainer<Key> where Key : CodingKey {
 

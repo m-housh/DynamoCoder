@@ -13,8 +13,8 @@ protocol Box {
 }
 
 protocol SharedBoxProtocol {
-    associatedtype B: Box
-    func unbox() -> B
+    associatedtype SharedBox: Box
+    func unbox() -> SharedBox
 }
 
 typealias UnkeyedBox = [Box]
@@ -49,7 +49,7 @@ extension UnkeyedBox: Box {
 extension KeyedBox: Box {
 
     var attribute: DynamoDB.AttributeValue {
-        .init(m: self.mapValues { $0.attribute } )
+        .init(m: self.mapValues { $0.attribute })
     }
 
     func convert() -> [String: DynamoDB.AttributeValue] {

@@ -28,7 +28,7 @@ struct DynamoUnkeyedDecoder: UnkeyedDecodingContainer {
         let item = self.container[currentIndex]
 
         var returnValue = false
-        
+
         if item is NSNull {
             returnValue = true
         }
@@ -101,7 +101,7 @@ struct DynamoUnkeyedDecoder: UnkeyedDecodingContainer {
 
         self.decoder.codingPath.append(DynamoCodingKey(int: self.currentIndex))
         defer { self.decoder.codingPath.removeLast() }
-        
+
         currentIndex += 1
 
         return DynamoUnkeyedDecoder(decoder: decoder, container: array, codingPath: decoder.codingPath)

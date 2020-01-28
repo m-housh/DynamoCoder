@@ -31,7 +31,7 @@ extension _DynamoDecoder: SingleValueDecodingContainer {
 
     func decode(_ type: String.Type) throws -> String {
         try expectNonNil()
-        guard let _ = self.storage.topContainer else {
+        guard self.storage.topContainer != nil else {
             throw DynamoDecodingError.notFound
         }
         return try self.unbox(self.storage.topContainer!, as: String.self)!

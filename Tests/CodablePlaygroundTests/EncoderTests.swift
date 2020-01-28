@@ -54,7 +54,6 @@ final class DynamoEncoderTests: XCTestCase {
 
     }
 
-
     func testArrayEncoding() throws {
         struct TestModel: Codable {
             let strings = ["foo", "bar"]
@@ -228,10 +227,6 @@ final class DynamoEncoderTests: XCTestCase {
             XCTAssertNotNil(each.m)
             XCTAssert(strings.contains(each.m!["someOrNone"]!.s!))
         }
-
-//        let encoded = try DynamoEncoder().encode(list, as: DynamoDB.AttributeValue.self)
-//        let decoded = try DynamoDecoder().decode([HasEnumValue].self, from: encoded)
-//        XCTAssertEqual(decoded, list)
     }
 
     func testConvertingWithEnum2() throws {
@@ -254,7 +249,6 @@ final class DynamoEncoderTests: XCTestCase {
                     self.type = type
                     self.owner = owner
                 }
-
 
                 public enum PhoneType: String, Codable {
                     case iPhone, mobile, home, office
@@ -287,7 +281,7 @@ final class DynamoEncoderTests: XCTestCase {
         let superEncoder = unkeyed.superEncoder()
         XCTAssertNotNil(superEncoder as? DynamoReferencingEncoder)
 
-        let _ = unkeyed.nestedUnkeyedContainer()
+        _ = unkeyed.nestedUnkeyedContainer()
         XCTAssertNotNil(encoder.storage.topContainer! as? SharedBox<UnkeyedBox>)
 
         try unkeyed.encodeNil()
@@ -298,7 +292,7 @@ final class DynamoEncoderTests: XCTestCase {
             codingPath: encoder2.codingPath,
             wrapping: encoder2.storage.pushUnkeyedContainer()
         )
-        let _ = unkeyed2.nestedContainer(keyedBy: DynamoCodingKey.self)
+        _ = unkeyed2.nestedContainer(keyedBy: DynamoCodingKey.self)
 
     }
 
@@ -319,7 +313,7 @@ final class DynamoEncoderTests: XCTestCase {
         let nestedUnkeyed = keyed.nestedUnkeyedContainer(forKey: .string("bar"))
         XCTAssertNotNil(nestedUnkeyed as? DynamoUnkeyedEncoder)
 
-        let _ = keyed.nestedContainer(keyedBy: DynamoCodingKey.self, forKey: .int(0))
+        _ = keyed.nestedContainer(keyedBy: DynamoCodingKey.self, forKey: .int(0))
 
         try keyed.encodeNil(forKey: .int(2))
     }
@@ -348,12 +342,10 @@ final class DynamoEncoderTests: XCTestCase {
         XCTAssertNotNil(storage.topContainer! as? SharedBox<UnkeyedBox>)
 
     }
-    
+
 }
 
-
 extension DynamoDB.AttributeValue: CustomStringConvertible {
-
 
     public var description: String {
         let string = self.s ?? "nil"
@@ -363,7 +355,6 @@ extension DynamoDB.AttributeValue: CustomStringConvertible {
         let stringSet = self.ss != nil ? "\(self.ss!)" : "nil"
         let numSet = self.ns != nil ? "\(self.ns!)" : "nil"
         let nullString = self.null != nil ? "\(self.null!)" : "nil"
-
 
         return "AttributeValue(s: \(string), n: \(numString), l: \(listString), m: \(mapString), ss: \(stringSet), ns: \(numSet), null: \(nullString))"
     }

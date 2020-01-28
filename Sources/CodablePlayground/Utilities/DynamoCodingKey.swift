@@ -35,7 +35,7 @@ enum DynamoCodingKey: CodingKey {
     var intValue: Int? {
         switch self {
         case let .int(int): return int
-        case .string(_): return nil
+        case .string: return nil
         }
     }
 
