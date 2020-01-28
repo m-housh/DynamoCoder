@@ -20,6 +20,9 @@ jobs:
         options: --workdir /build
     steps:
     - uses: actions/checkout@v1
+
+    - name: Install Deps
+      run: apt-get update && apt-get install -y openssl libssl-dev
     - name: Run tests
       run: swift test -v --enable-code-coverage --enable-test-discovery
     - name: Convert coverage files
