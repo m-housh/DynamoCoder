@@ -1,5 +1,8 @@
 # DynamoCoder
 
+![MacOS](https://github.com/m-housh/DynamoCoder/workflows/MacOS/badge.svg?branch=master)
+[![codecov](https://codecov.io/gh/m-housh/DynamoCoder/branch/master/graph/badge.svg)](https://codecov.io/gh/m-housh/DynamoCoder)
+
 A custom encoder / decoder for `DynamoDB` attribute types.
 
 This will allow you to convert `Encodable` types to appropriate values appropriate for passing data into `DynamoDB`.  Most encodables

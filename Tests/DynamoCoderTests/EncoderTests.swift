@@ -343,6 +343,23 @@ final class DynamoEncoderTests: XCTestCase {
 
     }
 
+    static var allTests = [
+        ("testSimpleEncoding", testSimpleEncoding),
+        ("testArrayEncoding", testArrayEncoding),
+        ("testSimpleNestedCodable", testSimpleNestedCodable),
+        ("testEncodingArrayOfEncodables", testEncodingArrayOfEncodables),
+        ("testSingleValueEncoding", testSingleValueEncoding),
+        ("testWithCustomEncodable", testWithCustomEncodable),
+        ("testListOfCustomEncodables", testListOfCustomEncodables),
+        ("testConvertingWithCodableEnum", testConvertingWithCodableEnum),
+        ("testConvertingWithEnum2", testConvertingWithEnum2),
+        ("testUnkeyedContainer", testUnkeyedContainer),
+        ("testKeyedEncodingContainer", testKeyedEncodingContainer),
+        ("testDynamoCodingKey", testDynamoCodingKey),
+        ("testSingleValueEncoding2", testSingleValueEncoding2),
+        ("testEncodingStoragePushesSharedContainers", testEncodingStoragePushesSharedContainers)
+    ]
+
 }
 
 extension DynamoDB.AttributeValue: CustomStringConvertible {

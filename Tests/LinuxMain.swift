@@ -1,6 +1,6 @@
 import XCTest
 
-import CodablePlaygroundTests
+import DynamoCoderTests
 
 var tests = [XCTestCaseEntry]()
 tests += CodablePlaygroundTests.allTests()
