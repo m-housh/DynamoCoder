@@ -1,0 +1,32 @@
+name: Linux
+
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tag: ['5.1']
+    container:
+      image: swift:${{ matrix.tagi }}
+      volumes:
+      - $GITHUB_WORKSPACE:/src
+      options: --workdir /src
+    steps:
+    - uses: actions/checkout@v1
+    - name: Build
+      run: swift build -v
+    - name: Run tests
+      run: swift test --enable-code-cov --enable-test-discovery
+    - name: Convert coverage
+      run: llvm-cov export -format="lcov" .build/debug/DynamoCoderPackageTests.xctest -instr-profile .build/debug/codecov/default.profdata > info.lcov
+    - name: Code Coverage
+      uses: codecov/codecov-action@v1.0.3
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
