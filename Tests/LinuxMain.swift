@@ -3,5 +3,5 @@ import XCTest
 import DynamoCoderTests
 
 var tests = [XCTestCaseEntry]()
-tests += CodablePlaygroundTests.allTests()
+tests += DynamoCoderTests.allTests()
 XCTMain(tests)

@@ -131,3 +131,85 @@ struct BoolBox: Box {
         .init(bool: unboxed)
     }
 }
+
+enum EncodedAttributeContainer {
+    case single(EncodedAttributeType)
+    case unkeyed([EncodedAttributeType])
+    case keyed([String: EncodedAttributeType])
+
+    func unwrap() throws -> EncodedAttributeType {
+        switch self {
+        case let .single(attribute): return attribute
+        case let .keyed(dictionary): return .map(dictionary)
+        case let .unkeyed(array): return .list(array)
+        }
+    }
+}
+
+enum EncodedAttributeType {
+    case string(String)
+    case number(String)
+    case stringSet([String])
+    case numberSet([String])
+    case bool(Bool)
+    case null
+    case map([String: EncodedAttributeType])
+    case list([EncodedAttributeType])
+
+    var attribute: DynamoDB.AttributeValue {
+        switch self {
+        case let .string(string): return .init(s: string)
+        case let .number(number): return .init(n: number)
+        case let .stringSet(stringSet): return .init(ss: stringSet)
+        case let .numberSet(numberSet): return .init(ns: numberSet)
+        case let .bool(bool): return .init(bool: bool)
+        case .null: return .init(null: true)
+        case let .map(map): return .init(m: map.mapValues { $0.attribute })
+        case let .list(list):
+            if self.isStringSet(list) {
+                return .init(ss: list.map { $0.attribute.s! })
+            }
+            if self.isNumberSet(list) {
+                return .init(ns: list.map { $0.attribute.n! })
+            }
+            return .init(l: list.map { $0.attribute })
+        }
+    }
+
+    private var isString: Bool {
+        switch self {
+        case .string: return true
+        default: return false
+        }
+    }
+
+    private var isNumber: Bool {
+        switch self {
+        case .number: return true
+        default: return false
+        }
+    }
+
+    private func isStringSet(_ array: [EncodedAttributeType]) -> Bool {
+        for item in array {
+            if !item.isString {
+                return false
+            }
+        }
+        return true
+    }
+
+    private func isNumberSet(_ array: [EncodedAttributeType]) -> Bool {
+        for item in array {
+            if !item.isNumber {
+                return false
+            }
+        }
+        return true
+    }
+}
+
+enum DynamoEncodingError: Error {
+
+    case invalidContainer(message: String?, reality: Any?)
+}
