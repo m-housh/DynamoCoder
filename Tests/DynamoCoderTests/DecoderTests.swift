@@ -11,6 +11,8 @@ import DynamoDB
 
 final class DynamoDecoderTests: XCTestCase {
 
+    let decoder = DynamoDecoder2()
+
     func testOptionalType() {
 
         let optional: Optional<String?> = .some(nil)
@@ -43,7 +45,7 @@ final class DynamoDecoderTests: XCTestCase {
             }
 
             let dictionary = try DynamoEncoder().encode(Simple())
-            let decoded = try DynamoDecoder().decode(Simple.self, from: dictionary)
+            let decoded = try decoder.decode(Simple.self, from: dictionary)
 
             XCTAssertEqual(decoded, Simple())
 
@@ -53,7 +55,7 @@ final class DynamoDecoderTests: XCTestCase {
             }
 
             let nestedEncoded = try DynamoEncoder().encode(NestedSimple())
-            let nestedDecoded = try DynamoDecoder().decode(NestedSimple.self, from: nestedEncoded)
+            let nestedDecoded = try decoder.decode(NestedSimple.self, from: nestedEncoded)
             XCTAssertEqual(nestedDecoded, NestedSimple())
         }
         catch {
@@ -82,12 +84,12 @@ final class DynamoDecoderTests: XCTestCase {
 
         do {
             let encoded = try DynamoEncoder().encode(TestModel())
-            let decoded = try DynamoDecoder().decode(TestModel.self, from: encoded)
+            let decoded = try decoder.decode(TestModel.self, from: encoded)
 
             XCTAssertEqual(decoded, TestModel())
 
             let multiEncoded = try DynamoEncoder().encode([TestModel(), TestModel(),  TestModel()], as: DynamoEncodedArray.self)
-            let multiDecoded = try DynamoDecoder().decode([TestModel].self, from: multiEncoded)
+            let multiDecoded = try decoder.decode([TestModel].self, from: multiEncoded)
 
             XCTAssertEqual(multiDecoded, [TestModel(), TestModel(),  TestModel()])
         }
@@ -109,7 +111,7 @@ final class DynamoDecoderTests: XCTestCase {
         }
 
         let encoded = try DynamoEncoder().encode(Bar())
-        let decoded = try DynamoDecoder().decode(Bar.self, from: encoded)
+        let decoded = try decoder.decode(Bar.self, from: encoded)
 
         XCTAssertEqual(decoded, Bar())
     }
@@ -144,12 +146,12 @@ final class DynamoDecoderTests: XCTestCase {
         }
 
         let encoded = try DynamoEncoder().encode(TestCustom(foo: "Bar", bar: "Foo"))
-        let decoded = try DynamoDecoder().decode(TestCustom.self, from: encoded)
+        let decoded = try decoder.decode(TestCustom.self, from: encoded)
         XCTAssertEqual(decoded, TestCustom(foo: "Bar", bar: "Foo"))
     }
 
     func testSingleValueDecoding() {
-        let decoder = DynamoDecoder()
+//        let decoder = DynamoDecoder()
         XCTAssertEqual(try decoder.decode(Bool.self, from: DynamoDB.AttributeValue(bool: false)), false)
         XCTAssertEqual(try decoder.decode(String.self, from: DynamoDB.AttributeValue(s: "foo")), "foo")
         XCTAssertEqual(try decoder.decode(Int.self, from: DynamoDB.AttributeValue(n: "1")), 1)
@@ -380,11 +382,11 @@ final class DynamoDecoderTests: XCTestCase {
         }
 
         let encoded = try DynamoEncoder().encode(Simple())
-        let decoded = try DynamoDecoder().decode(Simple.self, from: encoded)
+        let decoded = try decoder.decode(Simple.self, from: encoded)
         XCTAssertEqual(decoded, Simple())
 
         let arrayEncoded = try DynamoEncoder().encode([Simple(), Simple(), Simple()], as: DynamoEncodedArray.self)
-        let decodedArray = try DynamoDecoder().decode([Simple].self, from: arrayEncoded)
+        let decodedArray = try decoder.decode([Simple].self, from: arrayEncoded)
         XCTAssertEqual(decodedArray, [Simple(), Simple(), Simple()])
 
 //        let simpleData = try DynamoEncoder().encode(1, as: DynamoDB.AttributeValue.self)
@@ -406,7 +408,7 @@ final class DynamoDecoderTests: XCTestCase {
         }
 
         let pencoded = try DynamoEncoder().encode(Person())
-        let pdecodded = try DynamoDecoder().decode(Person.self, from: pencoded)
+        let pdecodded = try decoder.decode(Person.self, from: pencoded)
         XCTAssertEqual(pdecodded.names.count, 2)
 //
 //        let converted = try DynamoConverter().convert(Person())

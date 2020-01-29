@@ -144,6 +144,45 @@ enum EncodedAttributeContainer {
         case let .unkeyed(array): return .list(array)
         }
     }
+
+    var isSingleAttriibute: Bool {
+        switch self {
+        case .single: return true
+        default: return false
+        }
+    }
+
+    var attribute: DynamoDB.AttributeValue {
+        precondition(self.isSingleAttriibute)
+        switch self {
+        case let .single(encoded): return encoded.attribute
+        default:
+            fatalError()
+        }
+    }
+}
+
+enum DecodingAttributeContainer {
+    case single(DynamoDB.AttributeValue)
+    case unkeyed([DynamoAttributeDict])
+    case keyed(DynamoAttributeDict)
+    case list([DynamoDB.AttributeValue])
+
+    var isSingleAttribute: Bool {
+        switch self {
+        case .single: return true
+        default: return false
+        }
+    }
+
+    var attribute: DynamoDB.AttributeValue {
+        precondition(self.isSingleAttribute)
+        switch self {
+        case let .single(encoded): return encoded
+        default:
+            fatalError()
+        }
+    }
 }
 
 enum EncodedAttributeType {
@@ -206,6 +245,35 @@ enum EncodedAttributeType {
             }
         }
         return true
+    }
+
+    func decode<T: Decodable>(as type: T.Type) throws -> T? {
+        if T.self == String.self, let string = self.attribute.s {
+            return string as? T
+        }
+        if T.self is DynamoNumber, let numberString = self.attribute.n {
+            // decode a number.
+            print("We have a number: \(numberString)")
+            return nil
+        }
+        if T.self == [String].self {
+            if let stringSet = self.attribute.ss {
+                return stringSet as? T
+            }
+            if let list = self.attribute.l {
+                return list.compactMap { $0.s } as? T
+            }
+        }
+        if T.self == Bool.self, let bool = self.attribute.bool {
+            return bool as? T
+        }
+        if T.self is OptionalType, let null = self.attribute.null {
+            return null as? T
+        }
+//        if T.self is [String: Decodable], let dictionary = self.attribute.m {
+//            // decode dictionary
+//        }
+        return nil
     }
 }
 
