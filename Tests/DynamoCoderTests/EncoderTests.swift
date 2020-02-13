@@ -367,7 +367,10 @@ final class DynamoEncoderTests: XCTestCase {
         }
 
         let encoded = try encoder.encode(Custom())
-        print("ENCODED: \(encoded)")
+        XCTAssertEqual(encoded["data"]!.m!["height"]!.n!, "72")
+        XCTAssertEqual(encoded["data"]!.m!["weight"]!.n!, "155")
+        XCTAssert(encoded["name"]!.ss!.contains("foo"))
+        XCTAssert(encoded["name"]!.ss!.contains("bar"))
     }
 
     static var allTests = [

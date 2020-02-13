@@ -119,7 +119,7 @@ struct DynamoKeyedEncoder<K: CodingKey>: KeyedEncodingContainerProtocol {
 
     mutating func encodeNil(forKey key: K) throws {
         self.encoder.codingPath.append(key)
-        container[key.stringValue] = .null
+        container[key.stringValue] = .single(.null)
 //        encoder.storage.popContainer()
 //        encoder.storage.push(.keyed(storage))
     }
@@ -137,7 +137,7 @@ struct DynamoKeyedEncoder<K: CodingKey>: KeyedEncodingContainerProtocol {
         }
 
         let encoded = self.encoder.storage.popContainer()
-        self.container[key.stringValue] = try encoded.unwrap()
+        self.container[key.stringValue] = .single(try encoded.unwrap())
 
         // pop the keyed container and replace with current state.
 //        self.encoder.storage.popContainer()
@@ -152,10 +152,13 @@ struct DynamoKeyedEncoder<K: CodingKey>: KeyedEncodingContainerProtocol {
         self.codingPath.append(key)
         defer { self.encoder.codingPath.removeLast() }
 
+        let keyedContainer = KeyedAttributeContainer()
+        self.container[key.stringValue] = .keyed(keyedContainer)
+
         let container = DynamoKeyedEncoder<NestedKey>(
             referencing: encoder,
             codingPath: codingPath,
-            wrapping: KeyedAttributeContainer()
+            wrapping: keyedContainer
         )
 
         return KeyedEncodingContainer(container)
@@ -167,6 +170,7 @@ struct DynamoKeyedEncoder<K: CodingKey>: KeyedEncodingContainerProtocol {
         defer { self.encoder.codingPath.removeLast() }
 
         let container = UnkeyedAttributeContainer()
+        self.container[key.stringValue] = .unkeyed(container)
 
         return DynamoUnkeyedEncoder(
             referencing: encoder,

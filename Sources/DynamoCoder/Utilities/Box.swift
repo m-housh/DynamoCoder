@@ -154,16 +154,16 @@ final class UnkeyedAttributeContainer {
 
 final class KeyedAttributeContainer {
 
-    private var storage: [String: EncodedAttributeType] = [:]
+    private var storage: [String: EncodedAttributeContainer] = [:]
 
     init() { }
 
-    subscript(_ key: String) -> EncodedAttributeType? {
+    subscript(_ key: String) -> EncodedAttributeContainer? {
         get { storage[key] }
         set { storage[key] = newValue }
     }
 
-    var output: [String: EncodedAttributeType] {
+    var output: [String: EncodedAttributeContainer] {
         self.storage
     }
 }
@@ -176,7 +176,7 @@ enum EncodedAttributeContainer {
     func unwrap() throws -> EncodedAttributeType {
         switch self {
         case let .single(attribute): return attribute
-        case let .keyed(dictionary): return .map(dictionary.output)
+        case let .keyed(dictionary): return try .map(dictionary.output.mapValues({ try $0.unwrap() }))
         case let .unkeyed(array): return .list(array.output)
         }
     }
