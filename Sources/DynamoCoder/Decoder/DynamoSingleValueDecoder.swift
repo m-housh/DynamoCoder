@@ -24,7 +24,7 @@ extension _DynamoDecoder: SingleValueDecodingContainer {
     public func decodeNil() -> Bool {
         do {
             let attribute = try assertTopContainer()
-            return attribute.null ?? true
+            return attribute.null != nil
         }
         catch {
             return false

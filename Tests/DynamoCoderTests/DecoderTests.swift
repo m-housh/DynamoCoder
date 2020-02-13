@@ -166,76 +166,141 @@ final class DynamoDecoderTests: XCTestCase {
         XCTAssertEqual(try decoder.decode(UInt64.self, from: DynamoDB.AttributeValue(n: "13")), 13)
         XCTAssertEqual(try decoder.decode(UInt16.self, from: DynamoDB.AttributeValue(n: "13")), 13)
         XCTAssertEqual(try decoder.decode(UInt.self, from: DynamoDB.AttributeValue(n: "13")), 13)
+        XCTAssertEqual(try decoder.decode(Optional<Int>.self, from: DynamoDB.AttributeValue(null: true)), .none)
+        XCTAssertEqual(try decoder.decode(Optional<Int>.self, from: DynamoDB.AttributeValue(null: false)), .none)
+
+        // Errors for invalid types
+        XCTAssertThrowsError(try decoder.decode(Bool.self, from: DynamoDB.AttributeValue(s: "foo")))
+        XCTAssertThrowsError(try decoder.decode(String.self, from: DynamoDB.AttributeValue(n: "1")))
+        XCTAssertThrowsError(try decoder.decode(Int.self, from: DynamoDB.AttributeValue(s: "1")))
+        XCTAssertThrowsError(try decoder.decode(Float.self, from: DynamoDB.AttributeValue(s: "1.0")))
+        XCTAssertThrowsError(try decoder.decode(Double.self, from: DynamoDB.AttributeValue(s: "4.56")))
+        XCTAssertThrowsError(try decoder.decode(Int8.self, from: DynamoDB.AttributeValue(s: "10")))
+        XCTAssertThrowsError(try decoder.decode(Int16.self, from: DynamoDB.AttributeValue(s: "11")))
+        XCTAssertThrowsError(try decoder.decode(Int32.self, from: DynamoDB.AttributeValue(s: "12")))
+        XCTAssertThrowsError(try decoder.decode(Int64.self, from: DynamoDB.AttributeValue(s: "13")))
+        XCTAssertThrowsError(try decoder.decode(UInt8.self, from: DynamoDB.AttributeValue(s: "13")))
+        XCTAssertThrowsError(try decoder.decode(UInt32.self, from: DynamoDB.AttributeValue(s: "13")))
+        XCTAssertThrowsError(try decoder.decode(UInt64.self, from: DynamoDB.AttributeValue(s: "13")))
+        XCTAssertThrowsError(try decoder.decode(UInt16.self, from: DynamoDB.AttributeValue(s: "13")))
+        // Invalid number types.
+        XCTAssertThrowsError(try decoder.decode(UInt.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(Int.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(Float.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(Double.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(Int8.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(Int16.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(Int32.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(Int64.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(UInt8.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(UInt32.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(UInt64.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(UInt16.self, from: DynamoDB.AttributeValue(n: "foo")))
+        XCTAssertThrowsError(try decoder.decode(UInt.self, from: DynamoDB.AttributeValue(n: "foo")))
     }
 
     func testKeyedDecoding() throws {
-//        struct TestCodable: Codable, Equatable {
-//            let foo: String = "Foo"
-//        }
-//
-//        let input: [String: Any] = [
-//            "string": "foo",
-//            "bool": false,
-//            "int": Int(1),
-//            "double": Double(1.0),
-//            "float": Float(exactly: 13.0)!,
-//            "int8": Int8(exactly: 8.0)!,
-//            "int16": Int16(exactly: 16.0)!,
-//            "int32": Int32(exactly: 32.0)!,
-//            "int64": Int64(exactly: 64.0)!,
-//            "uInt": UInt(exactly: 1.0)!,
-//            "uInt8": UInt8(exactly: 8.0)!,
-//            "uInt16": UInt16(exactly: 16.0)!,
-//            "uInt32": UInt32(exactly: 32.0)!,
-//            "uInt64": UInt64(exactly: 64.0)!,
-//            "dict": ["foo": 1, "bar": 2],
+        struct TestCodable: Codable, Equatable {
+            let foo: String = "Foo"
+        }
+
+        let input: DynamoAttributeDict = [
+            "string": .init(s: "foo"),
+            "bool": .init(bool: false),
+            "int": .init(n: "\(Int(1))"),
+            "double": .init(n: "\(Double(1.0))"),
+            "float": .init(n: "\(Float(exactly: 13.0)!)"),
+            "int8": .init(n: "\(Int8(exactly: 8.0)!)"),
+            "int16": .init(n: "\(Int16(exactly: 16.0)!)"),
+            "int32": .init(n: "\(Int32(exactly: 32.0)!)"),
+            "int64": .init(n: "\(Int64(exactly: 64.0)!)"),
+            "uInt": .init(n: "\(UInt(exactly: 1.0)!)"),
+            "uInt8": .init(n: "\(UInt8(exactly: 8.0)!)"),
+            "uInt16": .init(n: "\(UInt16(exactly: 16.0)!)"),
+            "uInt32": .init(n: "\(UInt32(exactly: 32.0)!)"),
+            "uInt64": .init(n: "\(UInt64(exactly: 64.0)!)"),
+            "dict": .init(m: ["foo": .init(n: "1"), "bar": .init(n: "2")]),
 //            "nestedDict": ["foo": ["bing": "bam"], "bar": ["baz": "boom"]],
 //            "codable": TestCodable(),
-//            "stringArray": ["foo", "bar", "baz", "boom"],
-//            "nestedArrays": [["foo"], ["bar", "baz"], ["bing", "boom"]]
-//        ]
-////        let keyedDecoder = try _DynamoDecoder2(referencing: input).container(keyedBy: DynamoCodingKey.self)
-//        XCTAssertEqual(keyedDecoder.allKeys.count, 19)
-//        XCTAssert(keyedDecoder.contains(.string("string")))
-//        XCTAssertEqual(try keyedDecoder.decode(String.self, forKey: .string("string")), "foo")
-//        XCTAssertEqual(try keyedDecoder.decode(Bool.self, forKey: .string("bool")), false)
-//        XCTAssertEqual(try keyedDecoder.decode(Int.self, forKey: .string("int")), 1)
-//        XCTAssertEqual(try keyedDecoder.decode(Double.self, forKey: .string("double")), 1.0)
-//        XCTAssertEqual(try keyedDecoder.decode(Float.self, forKey: .string("float")), 13.0)
-//        XCTAssertEqual(try keyedDecoder.decode(Int8.self, forKey: .string("int8")), 8)
-//        XCTAssertEqual(try keyedDecoder.decode(Int16.self, forKey: .string("int16")), 16)
-//        XCTAssertEqual(try keyedDecoder.decode(Int32.self, forKey: .string("int32")), 32)
-//        XCTAssertEqual(try keyedDecoder.decode(Int64.self, forKey: .string("int64")), 64)
-//        XCTAssertEqual(try keyedDecoder.decode(UInt.self, forKey: .string("uInt")), 1)
-//        XCTAssertEqual(try keyedDecoder.decode(UInt8.self, forKey: .string("uInt8")), 8)
-//        XCTAssertEqual(try keyedDecoder.decode(UInt16.self, forKey: .string("uInt16")), 16)
-//        XCTAssertEqual(try keyedDecoder.decode(UInt32.self, forKey: .string("uInt32")), 32)
-//        XCTAssertEqual(try keyedDecoder.decode(UInt64.self, forKey: .string("uInt64")), 64)
+            "stringArray": .init(ss: ["foo", "bar", "baz", "boom"]),
+//            "nestedArrays": .init(l: [.init(l: ["bar", "baz"]), .init(l: ["bing", "boom"])])
+        ]
+        let keyedDecoder = try _DynamoDecoder(referencing: .keyed(input)).container(keyedBy: DynamoCodingKey.self)
+        XCTAssertEqual(keyedDecoder.allKeys.count, 16)
+        XCTAssert(keyedDecoder.contains(.string("string")))
+        XCTAssertEqual(try keyedDecoder.decode(String.self, forKey: .string("string")), "foo")
+        XCTAssertEqual(try keyedDecoder.decode(Bool.self, forKey: .string("bool")), false)
+        XCTAssertEqual(try keyedDecoder.decode(Int.self, forKey: .string("int")), 1)
+        XCTAssertEqual(try keyedDecoder.decode(Double.self, forKey: .string("double")), 1.0)
+        XCTAssertEqual(try keyedDecoder.decode(Float.self, forKey: .string("float")), 13.0)
+        XCTAssertEqual(try keyedDecoder.decode(Int8.self, forKey: .string("int8")), 8)
+        XCTAssertEqual(try keyedDecoder.decode(Int16.self, forKey: .string("int16")), 16)
+        XCTAssertEqual(try keyedDecoder.decode(Int32.self, forKey: .string("int32")), 32)
+        XCTAssertEqual(try keyedDecoder.decode(Int64.self, forKey: .string("int64")), 64)
+        XCTAssertEqual(try keyedDecoder.decode(UInt.self, forKey: .string("uInt")), 1)
+        XCTAssertEqual(try keyedDecoder.decode(UInt8.self, forKey: .string("uInt8")), 8)
+        XCTAssertEqual(try keyedDecoder.decode(UInt16.self, forKey: .string("uInt16")), 16)
+        XCTAssertEqual(try keyedDecoder.decode(UInt32.self, forKey: .string("uInt32")), 32)
+        XCTAssertEqual(try keyedDecoder.decode(UInt64.self, forKey: .string("uInt64")), 64)
 //        XCTAssertEqual(try keyedDecoder.decode([String: Int].self, forKey: .string("dict")), ["foo": 1, "bar": 2])
 //        XCTAssertEqual(try keyedDecoder.decode([String: [String: String]].self, forKey: .string("nestedDict")), ["foo": ["bing": "bam"], "bar": ["baz": "boom"]])
 //        XCTAssertEqual(try keyedDecoder.decode(TestCodable.self, forKey: .string("codable")), TestCodable())
 //        XCTAssertEqual(try keyedDecoder.decode([String].self, forKey: .string("stringArray")), ["foo", "bar", "baz", "boom"])
 //        XCTAssertEqual(try keyedDecoder.decode([[String]].self, forKey: .string("nestedArrays")), [["foo"], ["bar", "baz"], ["bing", "boom"]])
-//
-//        // Invalid key
-//        XCTAssertThrowsError(try keyedDecoder.decode(String.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(Bool.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(Double.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(Float.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(Int.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(Int8.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(Int16.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(Int32.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(Int64.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(UInt.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(UInt8.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(UInt16.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(UInt32.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(UInt64.self, forKey: .string("foo")))
-//        XCTAssertThrowsError(try keyedDecoder.decode(TestCodable.self, forKey: .string("foo")))
-//
+
+        // Invalid key
+        XCTAssertThrowsError(try keyedDecoder.decode(String.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(Bool.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(Double.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(Float.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(Int.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(Int8.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(Int16.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(Int32.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(Int64.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(UInt.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(UInt8.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(UInt16.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(UInt32.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(UInt64.self, forKey: .string("foo")))
+        XCTAssertThrowsError(try keyedDecoder.decode(TestCodable.self, forKey: .string("foo")))
+
 //        XCTAssertFalse(try keyedDecoder.decodeNil(forKey: .string("string")))
 //        XCTAssertThrowsError(try keyedDecoder.decodeNil(forKey: .string("foo")))
+    }
+
+    func testUnkeyedDecodingWithListInput() {
+        let list: [DynamoDB.AttributeValue] = [.init(null: true), .init(s: "foo"), .init(s: "bar")]
+        var decoder = try! _DynamoDecoder(referencing: .list(list)).unkeyedContainer() as? DynamoUnkeyedDecoder
+        XCTAssertNil(decoder!.listedDictionaries)
+        XCTAssertEqual(decoder!.count, 3)
+        XCTAssertEqual(decoder!.currentIndex, 0)
+        XCTAssert(try! decoder!.decodeNil())
+        XCTAssertEqual(decoder!.currentIndex, 1)
+        XCTAssertFalse(try! decoder!.decodeNil())
+        XCTAssertEqual(decoder!.currentIndex, 1)
+        XCTAssertThrowsError(try decoder!.assertIsDictionaries())
+        XCTAssertEqual(try! decoder!.decode(String.self), "foo")
+        XCTAssertEqual(decoder!.currentIndex, 2)
+        XCTAssertEqual(try! decoder!.decode(String.self), "bar")
+        XCTAssertEqual(decoder!.currentIndex, 3)
+        XCTAssertThrowsError(try decoder!.decode(String.self))
+    }
+
+    func testUnkeyedDecoderWithDictionaryInput() {
+        let unkeyed: [DynamoAttributeDict] = [["foo": .init(s: "bar"), "null": .init(null: true)]]
+        var decoder = try! _DynamoDecoder(referencing: .unkeyed(unkeyed)).unkeyedContainer() as? DynamoUnkeyedDecoder
+        XCTAssertNil(decoder!.listedAttributes)
+        XCTAssertEqual(decoder!.count, 1)
+        XCTAssertThrowsError(try decoder!.assertIsList())
+        XCTAssertNoThrow(try decoder!.assertIsDictionaries())
+        let decoded = try! decoder!.decode([String: Optional<String>].self)
+        XCTAssertEqual(decoded["foo"], "bar")
+        XCTAssertNil(decoded["null"]!)
+
+        let invalidTopContainer = _DynamoDecoder(referencing: .single(.init(s: "foo")))
+        let invalidUnkeyed = DynamoUnkeyedDecoder(referencing: invalidTopContainer, codingPath: [], wrapping: .single(.init(s: "foo")))
+        XCTAssertNil(invalidUnkeyed.count)
     }
 
     func testUnkeyedDecoder() throws {
@@ -414,5 +479,19 @@ final class DynamoDecoderTests: XCTestCase {
 //        let converted = try DynamoConverter().convert(Person())
 //        let cDecoded = try DynamoDecoder().decode(Person.self, from: converted)
 //        XCTAssertEqual(cDecoded.names.count, 2)
+    }
+
+    func testAssertTopContainer() {
+        let invalidSingleDecoder = _DynamoDecoder(referencing: .keyed(.init()))
+        XCTAssertThrowsError(try invalidSingleDecoder.assertTopContainer())
+        XCTAssertFalse(invalidSingleDecoder.decodeNil())
+    }
+
+    func testInvalidTopContainerThrowsError() {
+        let invalidKeyedContainer = _DynamoDecoder(referencing: .unkeyed([]))
+        XCTAssertThrowsError(try invalidKeyedContainer.container(keyedBy: DynamoCodingKey.self))
+
+        let invalidUnkeyedContainer = _DynamoDecoder(referencing: .keyed(.init()))
+        XCTAssertThrowsError(try invalidUnkeyedContainer.unkeyedContainer())
     }
 }

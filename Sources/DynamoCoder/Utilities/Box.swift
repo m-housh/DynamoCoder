@@ -8,131 +8,6 @@
 import Foundation
 import DynamoDB
 
-//protocol Box {
-//    var attribute: DynamoDB.AttributeValue { get }
-//}
-//
-//protocol SharedBoxProtocol {
-//    associatedtype SharedBox: Box
-//    func unbox() -> SharedBox
-//}
-//
-//typealias UnkeyedBox = [Box]
-//typealias KeyedBox = [String: Box]
-//
-//extension UnkeyedBox: Box {
-//
-//    var attribute: DynamoDB.AttributeValue {
-//        if let stringBoxes = self as? [StringBox] {
-//            return .init(ss: stringBoxes.map { $0.unboxed })
-//        }
-//        if let numberBoxes = self as? [AnyNumberBox] {
-//            return .init(ns: numberBoxes.map { $0.description })
-//        }
-//        return .init(l: self.map { $0.attribute })
-//    }
-//
-//    func convert() throws -> [[String: DynamoDB.AttributeValue]] {
-//        self.map { box in
-//            if let shared = box as? SharedBox<KeyedBox> {
-//                return shared.unbox().convert()
-//            }
-//            else if let keyed = box as? KeyedBox {
-//                return keyed.convert()
-//            }
-//
-//            fatalError("Invalid item in array.")
-//        }
-//    }
-//}
-//
-//extension KeyedBox: Box {
-//
-//    var attribute: DynamoDB.AttributeValue {
-//        .init(m: self.mapValues { $0.attribute })
-//    }
-//
-//    func convert() -> [String: DynamoDB.AttributeValue] {
-//        self.mapValues { $0.attribute }
-//    }
-//}
-//
-//// Used when encoding multi-value items.
-//class SharedBox<Unboxed: Box>: Box {
-//
-//    private(set) var unboxed: Unboxed
-//
-//    init(_ unboxed: Unboxed) {
-//        self.unboxed = unboxed
-//    }
-//
-//    // Called to update the `unboxed` value in the shared container.
-//    func withShared<T>(_ body: (inout Unboxed) throws -> T) rethrows -> T {
-//        return try body(&unboxed)
-//    }
-//
-//    func unbox() -> Unboxed {
-//        return unboxed
-//    }
-//
-//    var attribute: DynamoDB.AttributeValue {
-//        unboxed.attribute
-//    }
-//}
-//
-//protocol AnyNumberBox: Box, CustomStringConvertible { }
-//
-//struct NumberBox<Number>: AnyNumberBox {
-//
-//    let unboxed: Number
-//
-//    init(_ unboxed: Number) {
-//        self.unboxed = unboxed
-//    }
-//
-//    // Dynamo expects numbers to be strings.
-//    var attribute: DynamoDB.AttributeValue {
-//        return .init(n: self.description)
-//    }
-//
-//    var description: String { "\(unboxed)" }
-//
-//}
-//
-//struct StringBox: Box {
-//
-//    let unboxed: String
-//
-//    init(_ unboxed: String) {
-//        self.unboxed = unboxed
-//    }
-//
-//    var attribute: DynamoDB.AttributeValue {
-//        return .init(s: unboxed)
-//    }
-//}
-//
-//struct NullBox: Box {
-//
-//    var attribute:  DynamoDB.AttributeValue {
-//        .init(null: true)
-//    }
-//}
-//
-//struct BoolBox: Box {
-//
-//    let unboxed: Bool
-//
-//    init(_ unboxed: Bool) {
-//        self.unboxed = unboxed
-//    }
-//
-//    var attribute: DynamoDB.AttributeValue {
-//        .init(bool: unboxed)
-//    }
-//}
-
-
 final class UnkeyedAttributeContainer {
 
     internal var storage: [EncodedAttributeType] = []
@@ -180,22 +55,6 @@ enum EncodedAttributeContainer {
         case let .unkeyed(array): return .list(array.output)
         }
     }
-
-//    var isSingleAttriibute: Bool {
-//        switch self {
-//        case .single: return true
-//        default: return false
-//        }
-//    }
-//
-//    var attribute: DynamoDB.AttributeValue {
-//        precondition(self.isSingleAttriibute)
-//        switch self {
-//        case let .single(encoded): return encoded.attribute
-//        default:
-//            fatalError()
-//        }
-//    }
 }
 
 enum DecodingAttributeContainer {
@@ -281,35 +140,6 @@ enum EncodedAttributeType {
             }
         }
         return true
-    }
-
-    func decode<T: Decodable>(as type: T.Type) throws -> T? {
-        if T.self == String.self, let string = self.attribute.s {
-            return string as? T
-        }
-        if T.self is DynamoNumber, let numberString = self.attribute.n {
-            // decode a number.
-            print("We have a number: \(numberString)")
-            return nil
-        }
-        if T.self == [String].self {
-            if let stringSet = self.attribute.ss {
-                return stringSet as? T
-            }
-            if let list = self.attribute.l {
-                return list.compactMap { $0.s } as? T
-            }
-        }
-        if T.self == Bool.self, let bool = self.attribute.bool {
-            return bool as? T
-        }
-        if T.self is OptionalType, let null = self.attribute.null {
-            return null as? T
-        }
-//        if T.self is [String: Decodable], let dictionary = self.attribute.m {
-//            // decode dictionary
-//        }
-        return nil
     }
 }
 
