@@ -11,7 +11,7 @@ import DynamoDB
 
 final class DynamoEncoderTests: XCTestCase {
 
-    let encoder = DynamoEncoder2()
+    let encoder = DynamoEncoder()
 
     func testSimpleEncoding() throws {
         struct TestModel: Codable {
@@ -284,7 +284,7 @@ final class DynamoEncoderTests: XCTestCase {
         XCTAssertNotNil(superEncoder as? DynamoReferencingEncoder)
 
         _ = unkeyed.nestedUnkeyedContainer()
-        XCTAssertNotNil(encoder.storage.topContainer! as? SharedBox<UnkeyedBox>)
+//        XCTAssertNotNil(encoder.storage.topContainer! as? SharedBox<UnkeyedBox>)
 
         try unkeyed.encodeNil()
 
@@ -307,7 +307,7 @@ final class DynamoEncoderTests: XCTestCase {
         )
         let superEncoder = keyed.superEncoder()
         XCTAssertNotNil(superEncoder as? DynamoReferencingEncoder)
-        XCTAssert((superEncoder as! DynamoReferencingEncoder).canEncodeNewValue)
+//        XCTAssert((superEncoder as! DynamoReferencingEncoder).canEncodeNewValue)
 
         let superForKey = keyed.superEncoder(forKey: .string("foo"))
         XCTAssertNotNil(superForKey as? DynamoReferencingEncoder)
@@ -334,15 +334,40 @@ final class DynamoEncoderTests: XCTestCase {
         try _DynamoEncoder().encode(Name())
     }
 
-    func testEncodingStoragePushesSharedContainers() {
-        var storage = DynamoEncodingStorage()
+//    func testEncodingStoragePushesSharedContainers() {
+//        var storage = DynamoEncodingStorage()
+//
+//        storage.push(.keyed([:]))
+//        storage.push(.unkeyed([]))
+//        storage.push(.single(.null))
+//        XCTAssert(storage.count == 3)
+//    }
 
-        storage.push(KeyedBox())
-        XCTAssertNotNil(storage.topContainer! as? SharedBox<KeyedBox>)
+    func testCustomNestedContainers() throws {
 
-        storage.push(UnkeyedBox())
-        XCTAssertNotNil(storage.topContainer! as? SharedBox<UnkeyedBox>)
+        struct Custom: Encodable {
 
+            enum CodingKeys: String, CodingKey {
+                case name, data
+            }
+
+            enum DataKeys: String, CodingKey {
+                case height, weight
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                var nestedUnkeyed = container.nestedUnkeyedContainer(forKey: .name)
+                try nestedUnkeyed.encode("foo")
+                try nestedUnkeyed.encode("bar")
+                var nestedKeyed = container.nestedContainer(keyedBy: DataKeys.self, forKey: .data)
+                try nestedKeyed.encode(72, forKey: .height)
+                try nestedKeyed.encode(155, forKey: .weight)
+            }
+        }
+
+        let encoded = try encoder.encode(Custom())
+        print("ENCODED: \(encoded)")
     }
 
     static var allTests = [
@@ -359,7 +384,7 @@ final class DynamoEncoderTests: XCTestCase {
         ("testKeyedEncodingContainer", testKeyedEncodingContainer),
         ("testDynamoCodingKey", testDynamoCodingKey),
         ("testSingleValueEncoding2", testSingleValueEncoding2),
-        ("testEncodingStoragePushesSharedContainers", testEncodingStoragePushesSharedContainers)
+//        ("testEncodingStoragePushesSharedContainers", testEncodingStoragePushesSharedContainers)
     ]
 
 }

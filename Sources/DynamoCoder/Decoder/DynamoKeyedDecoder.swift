@@ -10,95 +10,123 @@ import DynamoDB
 
 struct DynamoKeyedDecoder<K: CodingKey>: KeyedDecodingContainerProtocol {
 
+
+
     typealias Key = K
 
-    let decoder: _DynamoDecoder
-
-    var container: [String: Any]
-
+    var decoder: _DynamoDecoder
+    let container: DynamoAttributeDict
     var codingPath: [CodingKey]
 
     init(
         referencing decoder: _DynamoDecoder,
-        wrapping container: [String: Any])
+        codingPath: [CodingKey],
+        wrapping container: DynamoAttributeDict)
     {
         self.decoder = decoder
-        self.codingPath = decoder.codingPath
+        self.codingPath = codingPath
         self.container = container
     }
 
-    var allKeys: [K] { container.keys.compactMap { Key(stringValue: $0) } }
+    var allKeys: [K] {
+        container.keys.compactMap { Key(stringValue: $0) }
+    }
 
     func contains(_ key: K) -> Bool {
-        container[key.stringValue] != nil
+        self.container[key.stringValue] != nil
+    }
+
+    func assertHasKey(_ key: Key) throws {
+        guard self.contains(key) else {
+            throw DynamoDecodingError.notFound
+        }
     }
 
     func decodeNil(forKey key: K) throws -> Bool {
-        guard let item = container[key.stringValue] else {
-            throw DynamoDecodingError.notFound
-        }
-        return item is NSNull
+        try assertHasKey(key)
+        decoder.storage.push(.single(self.container[key.stringValue]!))
+        let decoded = decoder.decodeNil()
+        decoder.storage.popContainer()
+        return decoded
     }
 
     func decode<T>(_ type: T.Type, forKey key: K) throws -> T where T : Decodable {
-        guard let attribute = container[key.stringValue] else {
-            throw DynamoDecodingError.notFound
+       try assertHasKey(key)
+        decoder.storage.push(.single(self.container[key.stringValue]!))
+        decoder.codingPath.append(key)
+        defer {
+            self.decoder.storage.popContainer()
+            self.decoder.codingPath.removeLast()
         }
-        self.decoder.codingPath.append(key)
-        defer { self.decoder.codingPath.removeLast() }
-        return try self.decoder.unbox(attribute, as: T.self)!
+        return try decoder.decode(type)
     }
 
     func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: K) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
 
-        guard let attribute = container[key.stringValue] else {
-            throw DynamoDecodingError.notFound
-        }
-
-        guard let dictionary = attribute as? [String: Any] else {
+        try assertHasKey(key)
+        guard let dictionary = self.container[key.stringValue]!.m else {
             throw DynamoDecodingError.typeMismatch(
                 codingPath: decoder.codingPath,
-                expected: [String: Any].self,
-                reality: attribute
+                expected: DynamoAttributeDict.self,
+                reality: self.container[key.stringValue]
             )
         }
 
-        self.decoder.codingPath.append(DynamoCodingKey(string: key.stringValue))
-        defer { self.decoder.codingPath.removeLast() }
+        decoder.codingPath.append(key)
+        defer { decoder.codingPath.removeLast() }
 
-        let container = DynamoKeyedDecoder<NestedKey>(referencing: decoder, wrapping: dictionary)
+        let container = DynamoKeyedDecoder<NestedKey>(
+            referencing: decoder,
+            codingPath: decoder.codingPath,
+            wrapping: dictionary
+        )
+
         return KeyedDecodingContainer(container)
     }
 
     func nestedUnkeyedContainer(forKey key: K) throws -> UnkeyedDecodingContainer {
-        guard let attribute = container[key.stringValue] else {
-            throw DynamoDecodingError.notFound
-        }
+        try assertHasKey(key)
+        let attribute = self.container[key.stringValue]!
 
-        guard let array = attribute as? [Any] else {
-            throw DynamoDecodingError.typeMismatch(
+        self.decoder.codingPath.append(key)
+        defer { self.decoder.codingPath.removeLast() }
+
+        if let list = attribute.l {
+            return DynamoUnkeyedDecoder(
+                referencing: decoder,
                 codingPath: decoder.codingPath,
-                expected: [Any].self,
-                reality: attribute
+                wrapping: .list(list)
             )
         }
 
-        self.decoder.codingPath.append(DynamoCodingKey(string: key.stringValue))
-        defer { self.decoder.codingPath.removeLast() }
+        if let stringSet = attribute.ss {
+            return DynamoUnkeyedDecoder(
+                referencing: decoder,
+                codingPath: decoder.codingPath,
+                wrapping: .list(stringSet.map { DynamoDB.AttributeValue.init(s: $0) })
+            )
+        }
 
-        return DynamoUnkeyedDecoder(
-            decoder: self.decoder,
-            container: array,
-            codingPath: decoder.codingPath
+        if let numberSet = attribute.ns {
+            return DynamoUnkeyedDecoder(
+                referencing: decoder,
+                codingPath: decoder.codingPath,
+                wrapping: .list(numberSet.map { DynamoDB.AttributeValue.init(s: $0) })
+            )
+        }
+
+        throw DynamoDecodingError.typeMismatch(
+            codingPath: decoder.codingPath,
+            expected: [DynamoDB.AttributeValue].self,
+            reality: attribute
         )
     }
 
     func superDecoder() throws -> Decoder {
-        return decoder
+        fatalError()
     }
 
     func superDecoder(forKey key: K) throws -> Decoder {
-        return decoder
+        fatalError()
     }
-
 }

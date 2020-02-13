@@ -9,23 +9,20 @@ import Foundation
 
 struct DynamoDecoderStorage {
 
-    var containers: [Any] = []
+    private var containers: [DecodingAttributeContainer] = []
 
     init() { }
 
-    var count: Int { containers.count }
-
-    var topContainer: Any? {
+    var topContainer: DecodingAttributeContainer? {
         containers.last
     }
 
-    mutating func push(_ container: Any) {
+    mutating func push(_ container: DecodingAttributeContainer) {
         containers.append(container)
     }
 
     @discardableResult
-    mutating func popContainer() -> Any? {
-        guard !containers.isEmpty else { return nil }
-        return containers.removeLast()
+    mutating func popContainer() -> DecodingAttributeContainer? {
+        return containers.popLast()
     }
 }

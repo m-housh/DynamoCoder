@@ -8,158 +8,194 @@
 import Foundation
 import DynamoDB
 
-protocol Box {
-    var attribute: DynamoDB.AttributeValue { get }
+//protocol Box {
+//    var attribute: DynamoDB.AttributeValue { get }
+//}
+//
+//protocol SharedBoxProtocol {
+//    associatedtype SharedBox: Box
+//    func unbox() -> SharedBox
+//}
+//
+//typealias UnkeyedBox = [Box]
+//typealias KeyedBox = [String: Box]
+//
+//extension UnkeyedBox: Box {
+//
+//    var attribute: DynamoDB.AttributeValue {
+//        if let stringBoxes = self as? [StringBox] {
+//            return .init(ss: stringBoxes.map { $0.unboxed })
+//        }
+//        if let numberBoxes = self as? [AnyNumberBox] {
+//            return .init(ns: numberBoxes.map { $0.description })
+//        }
+//        return .init(l: self.map { $0.attribute })
+//    }
+//
+//    func convert() throws -> [[String: DynamoDB.AttributeValue]] {
+//        self.map { box in
+//            if let shared = box as? SharedBox<KeyedBox> {
+//                return shared.unbox().convert()
+//            }
+//            else if let keyed = box as? KeyedBox {
+//                return keyed.convert()
+//            }
+//
+//            fatalError("Invalid item in array.")
+//        }
+//    }
+//}
+//
+//extension KeyedBox: Box {
+//
+//    var attribute: DynamoDB.AttributeValue {
+//        .init(m: self.mapValues { $0.attribute })
+//    }
+//
+//    func convert() -> [String: DynamoDB.AttributeValue] {
+//        self.mapValues { $0.attribute }
+//    }
+//}
+//
+//// Used when encoding multi-value items.
+//class SharedBox<Unboxed: Box>: Box {
+//
+//    private(set) var unboxed: Unboxed
+//
+//    init(_ unboxed: Unboxed) {
+//        self.unboxed = unboxed
+//    }
+//
+//    // Called to update the `unboxed` value in the shared container.
+//    func withShared<T>(_ body: (inout Unboxed) throws -> T) rethrows -> T {
+//        return try body(&unboxed)
+//    }
+//
+//    func unbox() -> Unboxed {
+//        return unboxed
+//    }
+//
+//    var attribute: DynamoDB.AttributeValue {
+//        unboxed.attribute
+//    }
+//}
+//
+//protocol AnyNumberBox: Box, CustomStringConvertible { }
+//
+//struct NumberBox<Number>: AnyNumberBox {
+//
+//    let unboxed: Number
+//
+//    init(_ unboxed: Number) {
+//        self.unboxed = unboxed
+//    }
+//
+//    // Dynamo expects numbers to be strings.
+//    var attribute: DynamoDB.AttributeValue {
+//        return .init(n: self.description)
+//    }
+//
+//    var description: String { "\(unboxed)" }
+//
+//}
+//
+//struct StringBox: Box {
+//
+//    let unboxed: String
+//
+//    init(_ unboxed: String) {
+//        self.unboxed = unboxed
+//    }
+//
+//    var attribute: DynamoDB.AttributeValue {
+//        return .init(s: unboxed)
+//    }
+//}
+//
+//struct NullBox: Box {
+//
+//    var attribute:  DynamoDB.AttributeValue {
+//        .init(null: true)
+//    }
+//}
+//
+//struct BoolBox: Box {
+//
+//    let unboxed: Bool
+//
+//    init(_ unboxed: Bool) {
+//        self.unboxed = unboxed
+//    }
+//
+//    var attribute: DynamoDB.AttributeValue {
+//        .init(bool: unboxed)
+//    }
+//}
+
+
+final class UnkeyedAttributeContainer {
+
+    internal var storage: [EncodedAttributeType] = []
+
+    init() { }
+
+    func push(_ attribute: EncodedAttributeType) {
+        storage.append(attribute)
+    }
+
+    var output: [EncodedAttributeType] {
+        self.storage
+    }
+
+    var count: Int {
+        storage.count
+    }
 }
 
-protocol SharedBoxProtocol {
-    associatedtype SharedBox: Box
-    func unbox() -> SharedBox
-}
+final class KeyedAttributeContainer {
 
-typealias UnkeyedBox = [Box]
-typealias KeyedBox = [String: Box]
+    private var storage: [String: EncodedAttributeType] = [:]
 
-extension UnkeyedBox: Box {
+    init() { }
 
-    var attribute: DynamoDB.AttributeValue {
-        if let stringBoxes = self as? [StringBox] {
-            return .init(ss: stringBoxes.map { $0.unboxed })
-        }
-        if let numberBoxes = self as? [AnyNumberBox] {
-            return .init(ns: numberBoxes.map { $0.description })
-        }
-        return .init(l: self.map { $0.attribute })
+    subscript(_ key: String) -> EncodedAttributeType? {
+        get { storage[key] }
+        set { storage[key] = newValue }
     }
 
-    func convert() throws -> [[String: DynamoDB.AttributeValue]] {
-        self.map { box in
-            if let shared = box as? SharedBox<KeyedBox> {
-                return shared.unbox().convert()
-            }
-            else if let keyed = box as? KeyedBox {
-                return keyed.convert()
-            }
-
-            fatalError("Invalid item in array.")
-        }
-    }
-}
-
-extension KeyedBox: Box {
-
-    var attribute: DynamoDB.AttributeValue {
-        .init(m: self.mapValues { $0.attribute })
-    }
-
-    func convert() -> [String: DynamoDB.AttributeValue] {
-        self.mapValues { $0.attribute }
-    }
-}
-
-// Used when encoding multi-value items.
-class SharedBox<Unboxed: Box>: Box {
-
-    private(set) var unboxed: Unboxed
-
-    init(_ unboxed: Unboxed) {
-        self.unboxed = unboxed
-    }
-
-    // Called to update the `unboxed` value in the shared container.
-    func withShared<T>(_ body: (inout Unboxed) throws -> T) rethrows -> T {
-        return try body(&unboxed)
-    }
-
-    func unbox() -> Unboxed {
-        return unboxed
-    }
-
-    var attribute: DynamoDB.AttributeValue {
-        unboxed.attribute
-    }
-}
-
-protocol AnyNumberBox: Box, CustomStringConvertible { }
-
-struct NumberBox<Number>: AnyNumberBox {
-
-    let unboxed: Number
-
-    init(_ unboxed: Number) {
-        self.unboxed = unboxed
-    }
-
-    // Dynamo expects numbers to be strings.
-    var attribute: DynamoDB.AttributeValue {
-        return .init(n: self.description)
-    }
-
-    var description: String { "\(unboxed)" }
-
-}
-
-struct StringBox: Box {
-
-    let unboxed: String
-
-    init(_ unboxed: String) {
-        self.unboxed = unboxed
-    }
-
-    var attribute: DynamoDB.AttributeValue {
-        return .init(s: unboxed)
-    }
-}
-
-struct NullBox: Box {
-
-    var attribute:  DynamoDB.AttributeValue {
-        .init(null: true)
-    }
-}
-
-struct BoolBox: Box {
-
-    let unboxed: Bool
-
-    init(_ unboxed: Bool) {
-        self.unboxed = unboxed
-    }
-
-    var attribute: DynamoDB.AttributeValue {
-        .init(bool: unboxed)
+    var output: [String: EncodedAttributeType] {
+        self.storage
     }
 }
 
 enum EncodedAttributeContainer {
     case single(EncodedAttributeType)
-    case unkeyed([EncodedAttributeType])
-    case keyed([String: EncodedAttributeType])
+    case unkeyed(UnkeyedAttributeContainer)
+    case keyed(KeyedAttributeContainer)
 
     func unwrap() throws -> EncodedAttributeType {
         switch self {
         case let .single(attribute): return attribute
-        case let .keyed(dictionary): return .map(dictionary)
-        case let .unkeyed(array): return .list(array)
+        case let .keyed(dictionary): return .map(dictionary.output)
+        case let .unkeyed(array): return .list(array.output)
         }
     }
 
-    var isSingleAttriibute: Bool {
-        switch self {
-        case .single: return true
-        default: return false
-        }
-    }
-
-    var attribute: DynamoDB.AttributeValue {
-        precondition(self.isSingleAttriibute)
-        switch self {
-        case let .single(encoded): return encoded.attribute
-        default:
-            fatalError()
-        }
-    }
+//    var isSingleAttriibute: Bool {
+//        switch self {
+//        case .single: return true
+//        default: return false
+//        }
+//    }
+//
+//    var attribute: DynamoDB.AttributeValue {
+//        precondition(self.isSingleAttriibute)
+//        switch self {
+//        case let .single(encoded): return encoded.attribute
+//        default:
+//            fatalError()
+//        }
+//    }
 }
 
 enum DecodingAttributeContainer {

@@ -9,97 +9,261 @@ import Foundation
 import DynamoDB
 
 extension _DynamoDecoder: SingleValueDecodingContainer {
-
-    func expectNonNil() throws {
-        guard !decodeNil() else {
-            throw DynamoDecodingError.notFound
+    func assertTopContainer() throws -> DynamoDB.AttributeValue {
+        let topContainer = storage.topContainer!
+        if !(topContainer.isSingleAttribute) {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: EncodedAttributeType.self,
+                reality: storage.topContainer
+            )
         }
+        return topContainer.attribute
     }
 
-    func decodeNil() -> Bool {
-        if let attribute = storage.topContainer as? DynamoDB.AttributeValue {
-            if let null = attribute.null { return null }
+    public func decodeNil() -> Bool {
+        do {
+            let attribute = try assertTopContainer()
+            return attribute.null ?? true
+        }
+        catch {
             return false
         }
-        return storage.topContainer is NSNull
     }
 
-    func decode(_ type: Bool.Type) throws -> Bool {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: Bool.self)!
+    public func decode(_ type: Bool.Type) throws -> Bool {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let bool = topContainer.bool else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: Bool.self,
+                reality: topContainer
+            )
+        }
+        return bool
     }
 
-    func decode(_ type: String.Type) throws -> String {
-        try expectNonNil()
-        guard self.storage.topContainer != nil else {
+    public func decode(_ type: String.Type) throws -> String {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let string = topContainer.s else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: String.self,
+                reality: topContainer
+            )
+        }
+        return string
+    }
+
+    public func decode(_ type: Double.Type) throws -> Double {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: Double.self,
+                reality: topContainer
+            )
+        }
+        guard let double = Double(numberString) else {
+            // this should be a better error.
             throw DynamoDecodingError.notFound
         }
-        return try self.unbox(self.storage.topContainer!, as: String.self)!
+        return double
     }
 
-    func decode(_ type: Double.Type) throws -> Double {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: Double.self)!
+    public func decode(_ type: Float.Type) throws -> Float {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: Float.self,
+                reality: topContainer
+            )
+        }
+        guard let float = Float(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return float
     }
 
-    func decode(_ type: Float.Type) throws -> Float {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: Float.self)!
+    public func decode(_ type: Int.Type) throws -> Int {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: Int.self,
+                reality: topContainer
+            )
+        }
+        guard let number = Int(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: Int.Type) throws -> Int {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: Int.self)!
+    public func decode(_ type: Int8.Type) throws -> Int8 {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: Int8.self,
+                reality: topContainer
+            )
+        }
+        guard let number = Int8(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: Int8.Type) throws -> Int8 {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: Int8.self)!
+    public func decode(_ type: Int16.Type) throws -> Int16 {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: Int16.self,
+                reality: topContainer
+            )
+        }
+        guard let number = Int16(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: Int16.Type) throws -> Int16 {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: Int16.self)!
+    public func decode(_ type: Int32.Type) throws -> Int32 {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: Int32.self,
+                reality: topContainer
+            )
+        }
+        guard let number = Int32(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: Int32.Type) throws -> Int32 {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: Int32.self)!
+    public func decode(_ type: Int64.Type) throws -> Int64 {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: Int64.self,
+                reality: topContainer
+            )
+        }
+        guard let number = Int64(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: Int64.Type) throws -> Int64 {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: Int64.self)!
+    public func decode(_ type: UInt.Type) throws -> UInt {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: UInt.self,
+                reality: topContainer
+            )
+        }
+        guard let number = UInt(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: UInt.Type) throws -> UInt {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: UInt.self)!
+    public func decode(_ type: UInt8.Type) throws -> UInt8 {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: UInt8.self,
+                reality: topContainer
+            )
+        }
+        guard let number = UInt8(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: UInt8.Type) throws -> UInt8 {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: UInt8.self)!
+    public func decode(_ type: UInt16.Type) throws -> UInt16 {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: UInt16.self,
+                reality: topContainer
+            )
+        }
+        guard let number = UInt16(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: UInt16.Type) throws -> UInt16 {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: UInt16.self)!
+    public func decode(_ type: UInt32.Type) throws -> UInt32 {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: UInt32.self,
+                reality: topContainer
+            )
+        }
+        guard let number = UInt32(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: UInt32.Type) throws -> UInt32 {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: UInt32.self)!
+    public func decode(_ type: UInt64.Type) throws -> UInt64 {
+        let topContainer = try assertTopContainer()
+        storage.popContainer()
+        guard let numberString = topContainer.n else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: codingPath,
+                expected: UInt64.self,
+                reality: topContainer
+            )
+        }
+        guard let number = UInt64(numberString) else {
+            // this should be a better error.
+            throw DynamoDecodingError.notFound
+        }
+        return number
     }
 
-    func decode(_ type: UInt64.Type) throws -> UInt64 {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: UInt64.self)!
-    }
-
-    func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-        try expectNonNil()
-        return try self.unbox(self.storage.topContainer!, as: T.self)!
+    public func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
+        // decode non-primitive types
+        return try type.init(from: self)
     }
 
 }

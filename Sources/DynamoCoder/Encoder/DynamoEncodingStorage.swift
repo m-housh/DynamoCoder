@@ -9,43 +9,39 @@ import Foundation
 
 struct DynamoEncodingStorage {
 
-    var containers: [Box] = []
+    private(set) var containers: [EncodedAttributeContainer] = []
 
-    mutating func pushKeyedContainer(_ keyedBox: KeyedBox = KeyedBox()) -> SharedBox<KeyedBox> {
-        let container = SharedBox(keyedBox)
-        containers.append(container)
+    init() { }
+
+    // used for key/value pairs.
+    mutating func pushKeyedContainer() -> KeyedAttributeContainer {
+        let container = KeyedAttributeContainer()
+//        let container = EncodedAttributeContainer.keyed(KeyedAttributeContainer())
+        containers.append(EncodedAttributeContainer.keyed(container))
         return container
     }
 
-    mutating func pushUnkeyedContainer() -> SharedBox<UnkeyedBox> {
-        let container = SharedBox(UnkeyedBox())
-        containers.append(container)
+    // used for an array or unkeyed container.
+    mutating func pushUnkeyedContainer() -> UnkeyedAttributeContainer {
+        let container = UnkeyedAttributeContainer()
+//        let container = EncodedAttributeContainer.unkeyed(UnkeyedAttributeContainer())
+        containers.append(EncodedAttributeContainer.unkeyed(container))
         return container
     }
 
-    mutating func push(_ container: Box) {
-        if let keyed = container as? KeyedBox {
-            containers.append(SharedBox(keyed))
-        }
-        else if let unkeyed = container as? UnkeyedBox {
-            containers.append(SharedBox(unkeyed))
-        }
-        else {
-            containers.append(container)
-        }
-    }
-
-    mutating func popContainer() -> Box {
-        precondition(
-            !containers.isEmpty,
-            "Attempting to pop container on empty stack!"
-        )
-        return containers.popLast()!
-    }
-
-    var topContainer: Box? {
-        containers.last
+    // used when at single value level.
+    mutating func push(_ container: EncodedAttributeContainer) {
+        containers.append(container)
     }
 
     var count: Int { containers.count }
+
+    var topContainer: EncodedAttributeContainer? { containers.last }
+
+    @discardableResult
+    mutating func popContainer() -> EncodedAttributeContainer {
+        precondition(!containers.isEmpty,
+                     "Empty stack!")
+        return containers.popLast()!
+    }
 }

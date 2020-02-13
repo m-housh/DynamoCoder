@@ -11,7 +11,7 @@ import DynamoDB
 
 final class DynamoDecoderTests: XCTestCase {
 
-    let decoder = DynamoDecoder2()
+    let decoder = DynamoDecoder()
 
     func testOptionalType() {
 
@@ -88,7 +88,7 @@ final class DynamoDecoderTests: XCTestCase {
 
             XCTAssertEqual(decoded, TestModel())
 
-            let multiEncoded = try DynamoEncoder().encode([TestModel(), TestModel(),  TestModel()], as: DynamoEncodedArray.self)
+            let multiEncoded = try DynamoEncoder().encode([TestModel(), TestModel(),  TestModel()])
             let multiDecoded = try decoder.decode([TestModel].self, from: multiEncoded)
 
             XCTAssertEqual(multiDecoded, [TestModel(), TestModel(),  TestModel()])
@@ -381,11 +381,11 @@ final class DynamoDecoderTests: XCTestCase {
             let dict: [String: Int] = ["foo": 1, "bar": 2]
         }
 
-        let encoded = try DynamoEncoder2().encode(Simple())
+        let encoded = try DynamoEncoder().encode(Simple())
         let decoded = try decoder.decode(Simple.self, from: encoded)
         XCTAssertEqual(decoded, Simple())
 
-        let arrayEncoded = try DynamoEncoder2().encode([Simple(), Simple(), Simple()])
+        let arrayEncoded = try DynamoEncoder().encode([Simple(), Simple(), Simple()])
         let decodedArray = try decoder.decode([Simple].self, from: arrayEncoded)
         XCTAssertEqual(decodedArray, [Simple(), Simple(), Simple()])
 
@@ -399,7 +399,7 @@ final class DynamoDecoderTests: XCTestCase {
             let last: String = "bar"
         }
 
-        let encoded = try DynamoEncoder2().encode([Name(), Name()])
+        let encoded = try DynamoEncoder().encode([Name(), Name()])
         let decoded = try decoder.decode([Name].self, from: encoded)
         XCTAssertEqual(decoded.count, 2)
 
@@ -407,7 +407,7 @@ final class DynamoDecoderTests: XCTestCase {
             let names: [Name] = [Name(), Name()]
         }
 
-        let pencoded = try DynamoEncoder2().encode(Person())
+        let pencoded = try DynamoEncoder().encode(Person())
         let pdecodded = try decoder.decode(Person.self, from: pencoded)
         XCTAssertEqual(pdecodded.names.count, 2)
 //

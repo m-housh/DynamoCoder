@@ -9,106 +9,137 @@ import Foundation
 import DynamoDB
 
 struct DynamoUnkeyedDecoder: UnkeyedDecodingContainer {
-
-    let decoder: _DynamoDecoder
-    let container: [Any]
+    var decoder: _DynamoDecoder
+    var container: DecodingAttributeContainer
     var codingPath: [CodingKey]
 
-    var count: Int? { container.count }
+    var listedAttributes: [DynamoDB.AttributeValue]? {
+        switch container {
+        case let .list(array): return array
+        default: return nil
+        }
+    }
 
-    var isAtEnd: Bool { currentIndex >= count! }
+    var listedDictionaries: [DynamoAttributeDict]? {
+        switch container {
+        case let .unkeyed(dictionaries): return dictionaries
+        default: return nil
+        }
+    }
+
+    init(
+        referencing decoder: _DynamoDecoder,
+        codingPath: [CodingKey],
+        wrapping container: DecodingAttributeContainer)
+    {
+        self.decoder = decoder
+        self.codingPath = codingPath
+        self.container = container
+    }
+
+    var count: Int? {
+        if let attributes = listedAttributes {
+            return attributes.count
+        }
+        if let dictionaries = listedDictionaries {
+            return dictionaries.count
+        }
+        return nil
+    }
+
+    var isAtEnd: Bool {
+        currentIndex >= count!
+    }
 
     var currentIndex: Int = 0
 
-    mutating func decodeNil() throws -> Bool {
+    func assertNotAtEnd() throws {
         guard !self.isAtEnd else {
             throw DynamoDecodingError.notFound
         }
+    }
 
-        let item = self.container[currentIndex]
-
-        var returnValue = false
-
-        if item is NSNull {
-            returnValue = true
+    func assertIsList() throws {
+        guard self.listedAttributes != nil else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: self.codingPath,
+                expected: [DynamoDB.AttributeValue].self,
+                reality: container
+            )
         }
-        else if let optional = item as? OptionalType, optional.isNil == true {
-            returnValue = true
-        }
+    }
 
-        if returnValue == true {
-            self.currentIndex += 1
+    func assertIsDictionaries() throws {
+        guard self.listedDictionaries != nil else {
+            throw DynamoDecodingError.typeMismatch(
+                codingPath: self.codingPath,
+                expected: [DynamoAttributeDict].self,
+                reality: container
+            )
         }
+    }
 
-        return returnValue
+    mutating func decodeNil() throws -> Bool {
+        try assertNotAtEnd()
+        try assertIsList()
+        decoder.storage.push(.single(self.listedAttributes![self.currentIndex]))
+        defer { self.decoder.storage.popContainer() }
+        let decoded = decoder.decodeNil()
+        decoder.storage.popContainer()
+        if decoded {
+            currentIndex += 1
+            return true
+        }
+        return false
     }
 
     mutating func decode<T>(_ type: T.Type) throws -> T where T : Decodable {
-        guard !self.isAtEnd else {
-            throw DynamoDecodingError.notFound
+        try assertNotAtEnd()
+
+        if listedAttributes != nil {
+            let attribute = listedAttributes![currentIndex]
+            decoder.storage.push(.single(attribute))
         }
-
-        let item = self.container[self.currentIndex]
-
-        self.decoder.codingPath.append(DynamoCodingKey(int: currentIndex))
-        defer { self.decoder.codingPath.removeLast() }
-
-        let decoded = try self.decoder.unbox(item, as: T.self)!
-
+        else {
+            let dictionary = listedDictionaries![currentIndex]
+            decoder.storage.push(.keyed(dictionary))
+        }
+        decoder.codingPath.append(DynamoCodingKey(int: currentIndex))
+        defer {
+            self.decoder.storage.popContainer()
+            self.decoder.codingPath.removeLast()
+        }
+        let decoded = try decoder.decode(type)
+        decoder.storage.popContainer()
         currentIndex += 1
         return decoded
-
     }
 
     mutating func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
 
-        guard !self.isAtEnd else {
-            throw DynamoDecodingError.notFound
-        }
+        try assertNotAtEnd()
+        try assertIsDictionaries()
 
-        let item = self.container[self.currentIndex]
-
-        guard let dictionary = item as? [String: Any] else {
-            throw DynamoDecodingError.typeMismatch(
-                codingPath: decoder.codingPath,
-                expected: [String: Any].self,
-                reality: item
-            )
-        }
-
+        let dictionary = listedDictionaries![self.currentIndex]
         self.decoder.codingPath.append(DynamoCodingKey(int: self.currentIndex))
         defer { self.decoder.codingPath.removeLast() }
 
         currentIndex += 1
-        let container = DynamoKeyedDecoder<NestedKey>(referencing: decoder, wrapping: dictionary)
+        let container = DynamoKeyedDecoder<NestedKey>(
+            referencing: decoder,
+            codingPath: decoder.codingPath,
+            wrapping: dictionary
+        )
         return KeyedDecodingContainer(container)
+
     }
 
     mutating func nestedUnkeyedContainer() throws -> UnkeyedDecodingContainer {
-        guard !self.isAtEnd else {
-            throw DynamoDecodingError.notFound
-        }
-
-        let container = self.container[self.currentIndex]
-
-        guard let array = container as? [Any] else {
-            throw DynamoDecodingError.typeMismatch(
-                codingPath: decoder.codingPath,
-                expected: [Any].self,
-                reality: container
-            )
-        }
-
-        self.decoder.codingPath.append(DynamoCodingKey(int: self.currentIndex))
-        defer { self.decoder.codingPath.removeLast() }
-
-        currentIndex += 1
-
-        return DynamoUnkeyedDecoder(decoder: decoder, container: array, codingPath: decoder.codingPath)
+        throw DynamoDecodingError.notFound
     }
 
     mutating func superDecoder() throws -> Decoder {
-        self.decoder
+        fatalError()
     }
 
 }
