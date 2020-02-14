@@ -9,6 +9,6 @@ import Foundation
 
 public enum DynamoDecodingError: Error {
 
-    case typeMismatch(codingPath: [CodingKey], expected: Any.Type, reality: Any?)
+    case typeMismatch(codingPath: [CodingKey], expected: Any.Type, reality: Any?, file: String = #file, line: Int = #line, function: String = #function)
     case notFound
 }

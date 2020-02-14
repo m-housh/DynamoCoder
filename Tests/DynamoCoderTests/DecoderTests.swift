@@ -97,7 +97,6 @@ final class DynamoDecoderTests: XCTestCase {
             print("error: \(error)")
             throw error
         }
-
     }
 
     func testSimpleNestedCodable() throws {
@@ -114,6 +113,30 @@ final class DynamoDecoderTests: XCTestCase {
         let decoded = try decoder.decode(Bar.self, from: encoded)
 
         XCTAssertEqual(decoded, Bar())
+    }
+
+    func testNestedCodables() throws {
+
+        struct Name: Codable, Equatable {
+            var first: String
+            var last: String
+        }
+
+        struct Person: Codable, Equatable {
+            var name: Name
+            var age: Int
+        }
+
+        do {
+            let person = Person(name: .init(first: "foo", last: "bar"), age: 22)
+            let encoded = try DynamoEncoder().encode(person)
+            let decoded = try DynamoDecoder().decode(Person.self, from: encoded)
+            XCTAssertEqual(person, decoded)
+        }
+        catch {
+            print("ERROR: \(error)")
+            throw error
+        }
     }
 
     func testWithCustomDecodable() throws {

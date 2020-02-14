@@ -54,14 +54,21 @@ class _DynamoDecoder: Decoder {
 
     func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
         let topContainer = self.storage.popContainer()
+        let dictionary: DynamoAttributeDict
+
+        // parse the top continer.
         switch topContainer {
-        case let .keyed(dictionary):
-            let container = DynamoKeyedDecoder<Key>(
-                referencing: self,
-                codingPath: self.codingPath,
-                wrapping: dictionary
-            )
-            return KeyedDecodingContainer(container)
+        case let .keyed(dict):
+            dictionary = dict
+        case let .single(attribute):
+            guard let dict = attribute.m else {
+                throw DynamoDecodingError.typeMismatch(
+                    codingPath: self.codingPath,
+                    expected: DynamoAttributeDict.self,
+                    reality: attribute
+                )
+            }
+            dictionary = dict
         default:
             throw DynamoDecodingError.typeMismatch(
                 codingPath: self.codingPath,
@@ -69,6 +76,14 @@ class _DynamoDecoder: Decoder {
                 reality: topContainer
             )
         }
+
+        // Build the keyed decoder and return.
+        let container = DynamoKeyedDecoder<Key>(
+            referencing: self,
+            codingPath: self.codingPath,
+            wrapping: dictionary
+        )
+        return KeyedDecodingContainer(container)
     }
 
     func unkeyedContainer() throws -> UnkeyedDecodingContainer {
