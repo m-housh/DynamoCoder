@@ -517,4 +517,34 @@ final class DynamoDecoderTests: XCTestCase {
         let invalidUnkeyedContainer = _DynamoDecoder(referencing: .keyed(.init()))
         XCTAssertThrowsError(try invalidUnkeyedContainer.unkeyedContainer())
     }
+
+    func testListDecoding() throws {
+        struct Name: Codable, Equatable {
+            let first: String
+            let last: String
+        }
+
+        struct WithLists: Codable, Equatable {
+            let strings: [String] = ["foo", "bar", "baz"]
+            let ints: [Int] = [1, 2, 3]
+            let names: [Name] = [
+                .init(first: "john", last: "doe"),
+                .init(first: "jane", last: "jones")
+            ]
+        }
+
+        let lists = WithLists()
+        let encoded = try DynamoEncoder().encode(lists)
+        let decoded = try DynamoDecoder().decode(WithLists.self, from: encoded)
+        XCTAssertEqual(lists, decoded)
+
+        let decodedStrings = try DynamoDecoder().decode([String].self, from: encoded["strings"]!)
+        XCTAssertEqual(decodedStrings, lists.strings)
+
+        let decodedInts = try DynamoDecoder().decode([Int].self, from: encoded["ints"]!)
+        XCTAssertEqual(decodedInts, lists.ints)
+
+        let decodedNames = try DynamoDecoder().decode([Name].self, from: encoded["names"]!)
+        XCTAssertEqual(decodedNames, lists.names)
+    }
 }

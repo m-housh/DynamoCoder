@@ -95,6 +95,34 @@ class _DynamoDecoder: Decoder {
                 codingPath: self.codingPath,
                 wrapping: topContainer
             )
+        case let .single(attribute):
+            if let list = attribute.l {
+                return DynamoUnkeyedDecoder(
+                    referencing: self,
+                    codingPath: self.codingPath,
+                    wrapping: .list(list)
+                )
+            }
+            else {
+                var array: [DynamoDB.AttributeValue]
+                if let strings = attribute.ss {
+                    array = strings.map { DynamoDB.AttributeValue(s: $0) }
+                }
+                else if let numbers = attribute.ns {
+                    array = numbers.map { DynamoDB.AttributeValue(n: $0) }
+                }
+                else {
+                    throw DynamoDecodingError.typeMismatch(
+                        codingPath: codingPath,
+                        expected: Array<Decodable>.self,
+                        reality: attribute
+                    )
+                }
+                return DynamoUnkeyedDecoder(
+                    referencing: self,
+                    codingPath: codingPath,
+                    wrapping: .list(array))
+            }
         default:
             throw DynamoDecodingError.typeMismatch(
                 codingPath: self.codingPath,
