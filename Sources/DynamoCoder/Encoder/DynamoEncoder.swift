@@ -64,7 +64,7 @@ public struct DynamoEncoder {
         }
     }
 
-    public enum EncodedOutput {
+    private enum EncodedOutput {
         case array(DynamoEncodedArray)
         case dictionary(DynamoAttributeDict)
     }
