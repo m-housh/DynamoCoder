@@ -10,9 +10,6 @@ This will allow you to convert `Encodable` types to appropriate values appropria
 will get converted to `[String: DynamoDB.AttributeValue]` which is typealiased to `DynamoAttributeDict`.  The encoder can
 also encode lists of encodables to `[[String: DynamoDB.AttributeValue]]` which is typealiased to `DynamoEncodedArray`.  Or encode a single value as `DynamoDB.AttributeValue`.
 
-The decoder is meant to do the same, however it should decode most `Decodable` types appropriately even if they were encoded by
-a different encoder.
-
 ## Usage
 
 ```swift
